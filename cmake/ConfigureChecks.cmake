@@ -214,28 +214,42 @@ message(STATUS "ptmx: ${HAVE_DEV_PTMX} ptc: ${HAVE_DEV_PTC}")
 
 find_library(HAVE_LIBCURSES curses)
 find_library(HAVE_LIBCRYPT crypt)
-find_library(HAVE_LIBDL dl)
-find_library(HAVE_LIBDLD dld)
-find_library(HAVE_LIBINTL intl)
-find_library(HAVE_LIBM m)
+find_library(HAVE_LIBINTL      intl)
+find_library(HAVE_LIBM         m)
 set(M_LIBRARIES ${HAVE_LIBM})
-find_library(HAVE_LIBNCURSES ncurses)
-find_library(HAVE_LIBNSL nsl)
-find_library(HAVE_LIBREADLINE readline)
-find_library(HAVE_LIBTERMCAP termcap)
-find_library(HAVE_LIBUTIL    util)
+find_library(HAVE_LIBNCURSES   ncurses)
+find_library(HAVE_LIBNSL       nsl)
+find_library(HAVE_LIBREADLINE  readline)
+find_library(HAVE_LIBTERMCAP   termcap)
+find_library(HAVE_LIBUTIL      util)
 
 if(APPLE)
   find_library(HAVE_LIBSYSTEMCONFIGURATION SystemConfiguration)
 endif(APPLE)
 
+# If not using static runtime, libdl and libpthread need to use all available
+# platform search suffixes to find the shared version if available
+if(WITH_STATIC_DEPENDENCIES AND NOT WITH_STATIC_RUNTIME)
+    set(_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${PLATFORM_CMAKE_FIND_LIBRARY_SUFFIXES})
+endif()
+
+find_library(HAVE_LIBDL        dl)
+find_library(HAVE_LIBDLD       dld)
+
 if(WITH_THREAD)
-  set(CMAKE_HAVE_PTHREAD_H ${HAVE_PTHREAD_H}) # Skip checking for header a second time.
+  # Skip checking for header a second time.
+  set(CMAKE_HAVE_PTHREAD_H ${HAVE_PTHREAD_H})
   find_package(Threads)
   if(CMAKE_HAVE_LIBC_CREATE)
     set_required_def(_REENTRANT 1)
   endif()
 endif()
+
+if(WITH_STATIC_DEPENDENCIES AND NOT WITH_STATIC_RUNTIME)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${_CMAKE_FIND_LIBRARY_SUFFIXES})
+    unset(_CMAKE_FIND_LIBRARY_SUFFIXES)
+endif() 
 
 set_required_def(_GNU_SOURCE 1)       # Define on Linux to activate all library features
 set_required_def(_NETBSD_SOURCE 1)    # Define on NetBSD to activate all library features
