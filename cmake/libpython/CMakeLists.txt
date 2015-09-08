@@ -225,6 +225,7 @@ foreach(name ${builtin_extensions})
     get_property(extension_${name}_link_libraries GLOBAL PROPERTY extension_${name}_link_libraries)
     list(APPEND builtin_link_libraries ${extension_${name}_link_libraries})
 endforeach()
+list(REMOVE_DUPLICATES builtin_link_libraries)
 
 # Collect builtin extension includedirs
 set(builtin_includedirs)
@@ -232,6 +233,7 @@ foreach(name ${builtin_extensions})
     get_property(extension_${name}_includedirs GLOBAL PROPERTY extension_${name}_includedirs)
     list(APPEND builtin_includedirs ${extension_${name}_includedirs})
 endforeach()
+list(REMOVE_DUPLICATES builtin_includedirs)
 
 # Collect builtin extension definitions
 foreach(name ${builtin_extensions})
@@ -271,7 +273,7 @@ function(add_libpython name type)
     endif(WITH_THREAD)
 
     if(UNIX)
-        target_link_libraries(${name} ${HAVE_LIBUTIL} ${HAVE_LIBM})
+        target_link_libraries(${name} ${HAVE_LIBM})
     endif(UNIX)
 
     set_target_properties(${name} PROPERTIES

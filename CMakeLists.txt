@@ -55,6 +55,33 @@ macro(append_if_absent VARNAME VALUE)
     endif()
 endmacro()
 
+# Only support static dependencies and runtime linkage for CMake >= 3.3.2
+# This will ensure the availability of the CMAKE_LINK_SEARCH_*_STATIC variables
+# and policies CMP0056 to propogate link flags to try_compile and CMP0065 to
+# remove -rdynamic from the exe link lines
+if(UNIX AND NOT CMAKE_VERSION VERSION_LESS 3.3.2)
+    cmake_dependent_option(WITH_STATIC_DEPENDENCIES "Restrict all dependencies to static libraries" OFF "BUILD_STATIC;NOT BUILD_SHARED;BUILD_EXTENSIONS_AS_BUILTIN" OFF)
+    cmake_dependent_option(WITH_STATIC_RUNTIME "Restrict runtime libraries (compiler and C runtimes), to static" OFF "WITH_STATIC_DEPENDENCIES" OFF)
+
+    # Don't add CMAKE_SHARED_LIBRARY_LINK_<LANG>_FLAGS to executables
+    # This will ensure that we're not excessively passing -rdynamic around
+    cmake_policy(SET CMP0065 NEW)
+
+    # Make sure we only search for static libraries
+    if(WITH_STATIC_DEPENDENCIES)
+        set(PLATFORM_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+    endif()
+
+    set(CMAKE_LINK_SEARCH_END_STATIC ${WITH_STATIC_RUNTIME})
+    if(WITH_STATIC_RUNTIME)
+        # Make sure that exe linker flags make it to try_compile
+        cmake_policy(SET CMP0056 NEW)
+        append_if_absent(CMAKE_EXE_LINKER_FLAGS "-static")
+        set(CMAKE_LINK_SEARCH_START_STATIC ON)
+    endif()
+endif()
+
 option(USE_SYSTEM_LIBRARIES "Use system libraries" ON)
 
 cmake_dependent_option(USE_SYSTEM_BZip2 "Use system BZip2" ON "USE_SYSTEM_LIBRARIES" OFF)
